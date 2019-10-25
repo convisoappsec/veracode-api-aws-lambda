@@ -28,10 +28,7 @@ const verStr = "vcode_request_version_1";
 exports.handler = async (event, context, callback) => {
     
     var requestBody = event['body'];
-    
-    if(IsJsonString(requestBody))
-        requestBody = JSON.parse(requestBody);
-    
+	
     const id = requestBody['api_id'];
     const key = requestBody['api_key'];
     const endpoint = requestBody['endpoint'];
@@ -150,12 +147,3 @@ var createResponse = (status, result) => {
   
   return response;
 };
-
-var IsJsonString = (str) => {
-    try {
-        JSON.parse(str);
-    } catch (e) {
-        return false;
-    }
-    return true;
-}
