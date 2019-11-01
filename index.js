@@ -2,18 +2,45 @@
 ---------------------------------------
 Author: Daniel Arenas
 Company: Conviso Application Security
-Last Update: 11/10/2019 
+Last Update: 01/11/2019 
 Version: 1.0
 Based on: https://gist.githubusercontent.com/mrpinghe/f44479f2270ea36bf3b7cc958cc76cc0
 
 Sample Event:
+
+Findings API
 
 {
   "body": {
     "api_id": "API_ID_HERE",
     "api_key": "API_KEY_HERE",
     "request_type": "GET",
+    "host": "api.veracode.com",
     "endpoint": "/appsec/v1/applications"
+  }
+}
+
+XML API
+
+{
+  "body": {
+    "api_id": "API_ID_HERE",
+    "api_key": "API_KEY_HERE",
+    "request_type": "GET",
+    "host": "analysiscenter.veracode.com",
+    "endpoint": "/api/5.0/getapplist.do"
+  }
+}
+
+With Params:
+
+{
+  "body": {
+    "api_id": "API_ID_HERE",
+    "api_key": "API_KEY_HERE",
+    "request_type": "GET",
+    "host": "analysiscenter.veracode.com",
+    "endpoint": "/api/5.0/detailedreport.do?build_id=X"
   }
 }
 ---------------------------------------
@@ -28,13 +55,15 @@ const verStr = "vcode_request_version_1";
 exports.handler = async (event, context, callback) => {
     
     var requestBody = event['body'];
-	
+    
+    if(checkJSON(requestBody))
+        requestBody = JSON.parse(requestBody);
+    
     const id = requestBody['api_id'];
     const key = requestBody['api_key'];
     const endpoint = requestBody['endpoint'];
     const http_method = requestBody['request_type'];
-    
-    var host = "api.veracode.com";
+    const host = requestBody['host'];
     
     return new Promise((resolve, reject) => {
       generateHeader(host, endpoint, http_method, id, key)
@@ -107,9 +136,14 @@ var performRequest = (hmacAuthToken,requestType,host, endpoint) => {
         });
         
         res.on("end", function () {
+            var api_result = Buffer.concat(chunks).toString();
+            if(checkJSON(api_result)){
+                api_result = JSON.parse(api_result);   
+            }
+            
             var r = {
                 "status": res.statusCode,
-                "message": JSON.parse(Buffer.concat(chunks).toString())
+                "message": api_result
             };
             
             resolve(r);
@@ -147,3 +181,12 @@ var createResponse = (status, result) => {
   
   return response;
 };
+
+var checkJSON = (str) => {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
